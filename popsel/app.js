@@ -1,5 +1,5 @@
-/**
- * Pixel Studio 2026 - Audio-Reactive Pixel Reveal Studio
+﻿/**
+ * Pixel Studio 2026 - Audio-Reactive Popsel
  * High-performance Canvas 2D engine with procedural Web Audio ASMR synthesis,
  * multi-aspect ratio rendering, and 60 FPS video export.
  */
@@ -18,7 +18,7 @@ class PopSoundEngine {
     this.masterGain = null;
     this.analyser = null;
     this.freqData = null;
-    this.enabled = true;
+    this.enabled = false; // OFF by default — user must explicitly choose an audio option
     this.volume = 0.6;
     this.soundType = 'bubble';
     this.lastPopTime = 0;
@@ -1438,7 +1438,7 @@ ui.bg.oninput = () => {
   $('#bg-hex').textContent = ui.bg.value;
 };
 
-// Sound Widget
+// Sound Widget (header toggle)
 $('#sound-toggle').onclick = () => {
   audio.init();
   audio.enabled = !audio.enabled;
@@ -1446,8 +1446,21 @@ $('#sound-toggle').onclick = () => {
   $('#sound-toggle').classList.toggle('muted', isMuted);
   $('.icon-sound-on').style.display = isMuted ? 'none' : 'block';
   $('.icon-sound-off').style.display = isMuted ? 'block' : 'none';
-  $('#hud-audio').textContent = isMuted ? '🔇 Audio OFF' : `🫧 ${ui.soundStyle.options[ui.soundStyle.selectedIndex].text}`;
-  $('#hud-audio').classList.toggle('audio-pill', !isMuted);
+
+  const badge = $('#badge-audio-status');
+  if (isMuted) {
+    $('#hud-audio').textContent = '🔇 SILENT VIDEO';
+    $('#hud-audio').classList.remove('audio-pill');
+    if (badge) { badge.textContent = '🔇 SILENT'; badge.style.background = 'rgba(255,255,255,0.08)'; }
+  } else {
+    // If dropdown still on 'none', auto-switch to bubble pop
+    const st = $('#soundtrack-mode');
+    if (st && st.value === 'none') { st.value = 'bubble'; }
+    const label = ui.soundStyle?.options?.[ui.soundStyle?.selectedIndex]?.text || 'Sound';
+    $('#hud-audio').textContent = `🫧 ${label}`;
+    $('#hud-audio').classList.add('audio-pill');
+    if (badge) { badge.textContent = '🔊 AUDIO ON'; badge.style.background = ''; }
+  }
 };
 
 ui.soundVol.oninput = () => {
@@ -1553,10 +1566,10 @@ $('#share-btn').onclick = async () => {
   if (navigator.share) {
     try {
       cv.toBlob(async blob => {
-        const file = new File([blob], 'pixel-reveal.png', { type: 'image/png' });
+        const file = new File([blob], 'popsel-reveal.png', { type: 'image/png' });
         await navigator.share({
-          title: 'Pixel Reveal Studio',
-          text: 'Check out this photo reveal made with Pixel Reveal Studio!',
+          title: 'Popsel',
+          text: 'Check out this photo reveal made with Popsel!',
           files: [file]
         });
       });
@@ -1884,3 +1897,16 @@ setAspectRatio('1:1');
 initBeforeAfter();
 requestAnimationFrame(animationLoop);
 
+// Set audio to silent state on startup
+(function initSilentMode() {
+  const hudAudio = $('#hud-audio');
+  if (hudAudio) {
+    hudAudio.textContent = '🔇 SILENT VIDEO';
+    hudAudio.classList.remove('audio-pill');
+  }
+  const badge = $('#badge-audio-status');
+  if (badge) {
+    badge.textContent = '🔇 SILENT';
+    badge.style.background = 'rgba(255,255,255,0.08)';
+  }
+})();
