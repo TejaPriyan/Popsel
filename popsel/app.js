@@ -151,7 +151,7 @@ function applyPresetColor(r, g, b) {
 // ============================================================================
 // 4. IMAGE HANDLING & SMART FRAMING
 // ============================================================================
-function loadSampleImage(url = 'sample1.jpg') {
+function loadSampleImage(url = 'assets/sample3.jpg') {
   const img = new Image();
   img.onload = () => {
     fitImage(img);
@@ -673,7 +673,7 @@ function initBeforeAfter() {
     bsx.fill();
     drawBA();
   };
-  img.src = 'sample1.jpg';
+  img.src = 'assets/sample3.jpg';
 }
 
 function drawBA() {
@@ -822,9 +822,9 @@ function updateSlideThumbnails() {
 // File Inputs
 $('#file').onchange = e => handleSingleFile(e.target.files[0]);
 $('#files').onchange = e => handleMultiFiles(e.target.files);
-$('#demo').onclick = () => loadSampleImage(currentRatioKey === '9:16' ? 'sample2.jpg' : 'sample1.jpg');
+$('#demo').onclick = () => loadSampleImage(currentRatioKey === '9:16' ? 'assets/sample2.jpg' : 'assets/sample3.jpg');
 $('#slide-demo').onclick = () => {
-  const urls = ['sample1.jpg', 'sample2.jpg'];
+  const urls = ['assets/sample3.jpg', 'assets/sample2.jpg', 'assets/sample4.jpg'];
   const loaded = [];
   let pending = urls.length;
   urls.forEach((url, i) => {
@@ -1108,7 +1108,7 @@ window.addEventListener('keydown', e => {
 });
 
 // ============================================================================
-// 7. ANIMATED GIF & DISCORD STICKER EXPORTER
+// 10. ANIMATED GIF & DISCORD STICKER EXPORTER
 // ============================================================================
 async function exportAnimatedGif() {
   const exportBtn = $('#export-gif');
@@ -1320,9 +1320,8 @@ function lzwEncode(minCodeSize, pixels, outBytes) {
 }
 
 // ============================================================================
-// 8. POPSEL BRANDING & INIT
+// 11. POPSEL INIT
 // ============================================================================
-// (Live Mirror feature removed - Popsel focuses on photo pixel reveal)
 
 // Initialize Popsel Studio
 setAspectRatio('1:1');

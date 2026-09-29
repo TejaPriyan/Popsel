@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Popsel Studio](banner.png)
+![Popsel Studio](assets/banner.png)
 
 [![Live Demo](https://img.shields.io/badge/Demo-popsel.vercel.app-ff3366?style=for-the-badge&logo=vercel)](https://popsel.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-9945FF?style=for-the-badge)](LICENSE)
