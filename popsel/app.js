@@ -9,24 +9,8 @@
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-// Clean no-op audio stub (audio removed per user preference)
-const audio = {
-  enabled: false,
-  mode: 'none',
-  soundType: 'none',
-  init() {},
-  triggerPop() {},
-  getAudioEnergy() { return { bass: 0 }; },
-  startBeats() {},
-  stopBeats() {},
-  setVolume() {},
-  loadCustomAudio() {},
-  dest: null,
-  ctx: null
-};
-
 // ============================================================================
-// 2. CANVAS & DIMENSIONS ENGINE
+// 1. CANVAS & DIMENSIONS ENGINE
 // ============================================================================
 const stageFrame = $('#stage-frame');
 const cv = $('#stage');
@@ -384,9 +368,7 @@ function buildParticles() {
       }
 
       const delayMs = Math.min(1, Math.max(0, delayWeight)) * span;
-      const pitchNorm = (delayWeight + lum) * 0.5; // Modulates ASMR audio pitch
-
-      P.push([x, y, finalR, finalG, finalB, delayMs, pitchNorm]);
+      P.push([x, y, finalR, finalG, finalB, delayMs]);
     }
   }
 
@@ -410,36 +392,12 @@ function drawParticles(t) {
   cx.fillStyle = ui.bg.value;
   cx.fillRect(0, 0, W, H);
 
-  let activePopsCount = 0;
-  let dominantPitch = 0.5;
-
-  // Beat-Sync Energy Detection
-  let bassPulse = 0;
-  const beatSyncEnabled = $('#beat-sync') && $('#beat-sync').checked;
-  if (beatSyncEnabled) {
-    const energy = audio.getAudioEnergy();
-    bassPulse = energy.bass;
-    const vuFill = $('#vu-fill');
-    if (vuFill) {
-      vuFill.style.width = `${Math.min(100, Math.round(bassPulse * 100))}%`;
-    }
-  }
-
   for (let i = 0; i < P.length; i++) {
-    const [x, y, r, g, b, delay, pitch] = P[i];
+    const [x, y, r, g, b, delay] = P[i];
     const progress = Math.min(1, (t - delay) / popMs);
     if (progress <= 0) continue;
 
-    // Track sound trigger for active popping window
-    if (progress > 0.05 && progress < 0.4) {
-      activePopsCount++;
-      dominantPitch = pitch;
-    }
-
-    let scaleFactor = cellSize * 1.06 * Math.max(0, easeOvershoot(progress, elasticVal));
-    if (bassPulse > 0.08) {
-      scaleFactor *= (1.0 + bassPulse * 0.35);
-    }
+    const scaleFactor = cellSize * 1.06 * Math.max(0, easeOvershoot(progress, elasticVal));
 
     const mx = x + cellSize / 2;
     const my = y + cellSize / 2;
@@ -521,11 +479,6 @@ function drawParticles(t) {
     }
   }
 
-  // Trigger ASMR sound if active particles are emerging
-  if (activePopsCount > 0 && !isPaused && audio.mode === 'asmr') {
-    audio.triggerPop(dominantPitch);
-  }
-
   // Final high-res fade in smoothly reveals complete image detail at end
   const finishTime = parseFloat(ui.dur.value) * 1000;
   const fade = (t - finishTime) / 600;
@@ -535,48 +488,8 @@ function drawParticles(t) {
     cx.globalAlpha = 1;
   }
 
-  // Apply Retro FX Engine (CRT scanlines, RGB split chroma, VHS glitch)
-  applyRetroFX(cx, W, H, t);
-
   // Update timeline scrubber
   updatePlaybackUI(t);
-}
-
-function applyRetroFX(targetCtx, w, h, t) {
-  const crt = $('#fx-crt')?.checked;
-  const chroma = $('#fx-chroma')?.checked;
-  const vhs = $('#fx-vhs')?.checked;
-
-  if (chroma) {
-    targetCtx.save();
-    targetCtx.globalCompositeOperation = 'screen';
-    const offset = Math.floor(Math.sin(t * 0.008) * 3 + 2);
-    targetCtx.drawImage(targetCtx.canvas, -offset, 0);
-    targetCtx.restore();
-  }
-
-  if (vhs) {
-    if (Math.random() < 0.16) {
-      const sliceY = Math.random() * h;
-      const sliceH = 6 + Math.random() * 20;
-      const shiftX = (Math.random() - 0.5) * 14;
-      targetCtx.drawImage(targetCtx.canvas, 0, sliceY, w, sliceH, shiftX, sliceY, w, sliceH);
-    }
-  }
-
-  if (crt) {
-    targetCtx.save();
-    targetCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    for (let y = 0; y < h; y += 3) {
-      targetCtx.fillRect(0, y, w, 1);
-    }
-    const vig = targetCtx.createRadialGradient(w / 2, h / 2, w * 0.35, w / 2, h / 2, w * 0.72);
-    vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    vig.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
-    targetCtx.fillStyle = vig;
-    targetCtx.fillRect(0, 0, w, h);
-    targetCtx.restore();
-  }
 }
 
 function updatePlaybackUI(t) {
@@ -642,7 +555,7 @@ function animationLoop(timestamp) {
 }
 
 // ============================================================================
-// 7. RECORDING & VIDEO EXPORT (WITH ASMR AUDIO!)
+// 7. RECORDING & 60 FPS VIDEO EXPORT
 // ============================================================================
 function recordVideo() {
   if (!window.MediaRecorder) {
@@ -1192,12 +1105,6 @@ window.addEventListener('keydown', e => {
   } else if (e.code === 'KeyR') {
     $('#quick-replay').click();
   }
-});
-
-// Retro FX Checkbox change handlers - redraw immediately
-['#fx-crt', '#fx-chroma', '#fx-vhs'].forEach(selector => {
-  const el = $(selector);
-  if (el) el.onchange = () => drawParticles(T);
 });
 
 // ============================================================================

@@ -1,83 +1,181 @@
-# Pixel Studio 2026 – Audio-Reactive Pixel Reveal Studio
+# 🫧 Popsel — Mesmerizing Pixel Reveal Studio
 
-Turn any photo into a mesmerizing popping-pixel reveal video with tactile ASMR sound effects, multi-aspect ratio rendering, and instant 60 FPS video export.
+<div align="center">
 
-Open `index.html` in Chrome, Edge, Safari, or Firefox. **No build step, no server, and no external dependencies.** 100% private and runs entirely in your browser.
+![Popsel Banner](sample1.jpg)
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+[![60 FPS Export](https://img.shields.io/badge/Export-60%20FPS%20Video-blue.svg)]()
+[![100% Client-Side](https://img.shields.io/badge/Privacy-100%25%20Client--Side-green.svg)]()
+[![Creator: Teja Priyan](https://img.shields.io/badge/Created%20by-Teja%20Priyan-ff3366.svg)](https://github.com/TejaPriyan)
 
-## ✨ Features
+**Transform any photo into a mesmerizing popping-pixel animation video.**
 
-- 🎧 **Audio Track & Beat-Sync Engine:**
-  - Procedural 120 BPM Synthwave drum & bass synthesizer and Chill Lo-Fi drum grooves.
-  - Custom audio track upload (`.mp3`, `.wav`, `.m4a`).
-  - **Beat-Sync Physics:** Real-time FFT frequency analyser makes particles dynamically pulse and expand to bass drops with live VU meter.
-- 📺 **Retro FX & Glitch Engine:**
-  - *CRT Scanlines & Curved Monitor Vignette* for nostalgic arcade monitors.
-  - *RGB Chromatic Aberration* split prism effect during bursts.
-  - *VHS Tape Glitch* horizontal analog displacement bands.
-- 👾 **Animated GIF & Discord/WhatsApp Sticker Export:**
-  - Client-side, zero-dependency GIF89a encoder producing looping animated GIFs and chat stickers in 1 click.
-- 🎥 **Live Webcam Pixel Mirror Mode:**
-  - Real-time webcam quantization into popping dots with 1-click snapshot and 5-second reel video recorder.
-- 📱 **Multi-Aspect Ratio Studio:**
-  - `9:16` Vertical Story / Reels / TikTok (720×1280)
-  - `1:1` Square Feed / Profile (720×720)
-  - `4:5` Instagram Portrait (720×900)
-  - `16:9` Widescreen Video (1280×720)
-- 🫧 **Procedural Web Audio ASMR Engine:**
-  - Real-time zero-file audio synthesis.
-  - 5 sound styles: *Bubble Pop*, *8-Bit Blip*, *Bamboo Woodblock*, *Water Droplet*, and *Mechanical Click*.
-  - Sounds are synchronized and muxed directly into the exported video stream.
-- 🎨 **1-Click Aesthetic Filter Presets:**
-  - *Original* (Vibrant enhancement)
-  - *Tokyo Cyberpunk* (Neon cyan & electric magenta)
-  - *1989 GameBoy* (Authentic 4-color phosphor green)
-  - *Lofi Sunset* (Warm amber & dusty violet)
-  - *Cinema Noir* (Dramatic contrast B&W)
-  - *Vaporwave* (Pastel turquoise & cotton candy pink)
-- 🔘 **7 Reveal Motion Patterns:**
-  - *Ripple* (Interactive click epicenter with visual shockwave ring)
-  - *Scatter* (Organic random noise pop)
-  - *Sweep* (Left-to-right wave)
-  - *Cascade* (Top-to-bottom rain)
-  - *Spiral Vortex* (Golden ratio inward swirl)
-  - *Luminance* (Shadows pop first, highlights last)
-  - *Edge Contour* (Sobel filter sketches outlines first, then fills interior)
-- 🔷 **7 Geometric Dot Shapes:**
-  - Circle, Retro Square, Mosaic Diamond, Sci-Fi Hexagon, Sparkle Star, Crosshair Plus, and Heart.
-- 🪞 **Smart Framing & Blur Backdrop:**
-  - Avoid black letterboxing: smart blurred mirror background, crop-to-fill, or solid matte.
-- 🎬 **High Definition 60 FPS Export:**
-  - One-tap 60 FPS video download (`.mp4` / `.webm`) with embedded ASMR audio track.
-  - Still HD PNG snapshot.
-  - Native Web Share API support on mobile devices.
-- 🎞️ **Continuous Slideshow Reels:**
-  - Upload multiple photos into a queue with visual thumbnail tray.
-- 🔍 **Interactive Before & After Studio:**
-  - Split-screen comparison wipe with mouse scrub, touch drag, and auto-sweep animation.
+[🔴 Live Demo](https://tejapriya.github.io/Popsel) • [📦 Download](https://github.com/TejaPriyan/Popsel/archive/refs/heads/main.zip) • [🐛 Report Bug](https://github.com/TejaPriyan/Popsel/issues)
+
+</div>
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## ✨ What is Popsel?
 
+**Popsel** is a high-performance, 100% browser-based creative studio that turns ordinary photos into satisfying **popping-pixel reveal animations**. Each pixel bursts into existence with configurable physics, geometric shapes, and aesthetic retro filters. Export as **60 FPS MP4/WebM video**, **animated GIF stickers**, or **HD PNG stills**.
+
+> 🔒 **100% private.** Your photos never leave your device. All rendering, particle physics, and video encoding happen entirely in your browser.
+
+---
+
+## 🎯 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🫧 **Pop Solo Mode** | Single photo pixel reveal with customizable particle physics |
+| 🎞️ **Slideshow Reel** | Queue multiple photos for a continuous story reel video |
+| ↔️ **Before & After** | Draggable pixel wipe comparison between original and pixelated |
+| 🎨 **6 Aesthetic Filters** | Tokyo Cyberpunk, GameBoy 1989, Lofi Sunset, Cinema Noir, Matrix, Vaporwave |
+| ⚡ **7 Reveal Physics** | Random Scatter, Sweep Left-to-Right, Sweep Top-to-Bottom, Ripple Wave, Spiral, Shadows First, Contour Outlines |
+| 🔷 **7 Dot Shapes** | Bubble Circle, Retro Square, Diamond, Hexagon, Star, Cross, Heart |
+| 📐 **4 Aspect Ratios** | 9:16 Story, 1:1 Square, 4:5 Feed, 16:9 Widescreen |
+| 📤 **Multi-Format Export** | 60 FPS HD MP4/WebM video, Animated GIF sticker, HD PNG snapshot |
+| ⌨️ **Keyboard Shortcuts** | Space to pause/play, R to replay |
+| 📱 **Mobile & Laptop Optimized** | Responsive touch-friendly interface for iPhone, Android, tablets, and laptops |
+
+---
+
+## 🚀 Getting Started
+
+### Option 1: Open Directly (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/TejaPriyan/Popsel.git
+
+# Navigate into the folder
+cd Popsel/popsel
+
+# Run a local server:
+python -m http.server 3456
+# Then open in browser: http://localhost:3456
+```
+
+### Option 2: Run with Node.js
+```bash
+npx serve ./popsel
+```
+
+---
+
+## 🎮 How to Use
+
+1. **Upload a photo** — drag & drop onto the canvas, click to browse, or pick one of the sample photos
+2. **Choose your aspect ratio** — 9:16 for TikTok/Reels/Shorts, 1:1 for Instagram, 16:9 for YouTube
+3. **Adjust physics** — pixel block size, reveal pattern, dot shape, animation duration, bounce elasticity
+4. **Apply an aesthetic filter** — Tokyo Cyberpunk, GameBoy, Lofi Sunset, Cinema Noir, Matrix, Vaporwave, or original colors
+5. **Export** — download as a 60 FPS MP4/WebM video, animated GIF sticker, or PNG snapshot
+
+---
+
+### ⌨️ Keyboard Shortcuts
 | Key | Action |
-| :--- | :--- |
+|-----|--------|
 | `Space` | Play / Pause animation |
-| `R` | Quick Replay from beginning |
-| Canvas Click | In *Ripple* mode, sets the epicenter of the wave |
+| `R` | Replay from start |
 
 ---
 
-## 📂 File Architecture
+## 📂 Project Structure
 
-- `index.html` - Semantic UI, modal tabs, and control panels.
-- `style.css` - 2026 design system, glassmorphism, responsive grid, and neon accents.
-- `app.js` - Procedural Web Audio API engine, canvas renderer, particle system, and MediaRecorder exporter.
+```
+Popsel/
+└── popsel/
+    ├── index.html              # Main app — SEO, AEO, GEO optimized
+    ├── style.css               # Full design system — dark mode, responsive
+    ├── app.js                  # Core engine — canvas, particles, recording
+    ├── sample1.jpg             # Sample: Portrait photo
+    ├── sample2.jpg             # Sample: Landscape / nature
+    ├── sample3.jpg             # Sample: Pagoda architecture
+    ├── sample4.jpg             # Sample: Supercar
+    ├── google87bb3bc53ec346d2.html  # Google Search Console verification
+    └── README.md               # Documentation
+```
 
 ---
 
-## 👨‍💻 Creator
+## 🛠️ Technical Architecture
 
-**Created by Teja Priyan**
+### Canvas Engine
+- **Pure HTML5 Canvas 2D** — no WebGL or external library overhead
+- **60 FPS requestAnimationFrame** render loop with elastic overshoot physics
+- Per-pixel particle system with delay arrays, bounce-back easing, and luminance-aware spawning
+- Sobel edge detection for contour-first reveal order
 
+### Recording Engine
+- `canvas.captureStream(60)` — captures canvas stream at full 60 FPS
+- Automatic codec negotiation: `video/mp4` (Safari/Chrome) and `video/webm` (Firefox)
+- High-definition 14 Mbps video bitrate
+- Downloads as `popsel-{ratio}-{timestamp}.mp4` / `.webm`
+
+### GIF Encoder
+- Pure JavaScript LZW GIF encoder — completely client-side
+- 16-frame sample at 360px for Discord/Telegram sticker size
+- Palette quantization: full-color to 256-color via median-cut
+
+---
+
+## 🌐 SEO, AEO & GEO
+
+Popsel is fully optimized for search engines and AI answer engines:
+
+- **SEO**: Title tags, meta description, keywords, canonical URL, `robots` directives
+- **Open Graph**: Facebook/Discord rich link previews
+- **Twitter Cards**: summary_large_image cards
+- **Google Verification**: `google87bb3bc53ec346d2` meta tag + HTML file
+- **AEO** (Answer Engine Optimization): JSON-LD `FAQPage` schema for ChatGPT/Perplexity
+- **GEO** (Generative Engine Optimization): JSON-LD `WebApplication` schema for AI search engines
+- **Semantic HTML5**: Semantic landmarks and visible FAQ section for web crawlers
+
+---
+
+## 📱 Browser Compatibility
+
+| Browser | Support |
+|---------|---------|
+| Chrome / Edge (Desktop & Android) | ✅ Full 60 FPS Export |
+| Safari (macOS & iOS) | ✅ Full 60 FPS Export |
+| Firefox | ✅ Full 60 FPS Export |
+| Samsung Internet | ✅ Full 60 FPS Export |
+
+---
+
+## 🔒 Privacy Guarantee
+
+> **Popsel never uploads your photos or videos to any server.**
+
+All processing happens locally in your browser:
+- Canvas rendering — CPU/GPU local
+- Video encoding — MediaRecorder API local
+- GIF encoding — JavaScript local
+
+---
+
+## 📄 License
+
+MIT License — free to use, modify, and distribute. Attribution appreciated.
+
+---
+
+## 👤 Creator
+
+**Created by [Teja Priyan](https://github.com/TejaPriyan)**
+
+Popsel was designed and built as an open-source, private, in-browser creative studio for digital creators, artists, content producers, and short-form video enthusiasts.
+
+---
+
+<div align="center">
+
+Made with ❤️, HTML5 Canvas & MediaStream Recording API
+
+**Popsel** — *See every pixel pop.*
+
+</div>

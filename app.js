@@ -1,7 +1,8 @@
 /**
- * Pixel Studio 2026 - Audio-Reactive Pixel Reveal Studio
- * High-performance Canvas 2D engine with procedural Web Audio ASMR synthesis,
+ * Popsel - Mesmerizing Pixel Reveal Studio
+ * High-performance Canvas 2D engine with procedural particle reveals,
  * multi-aspect ratio rendering, and 60 FPS video export.
+ * Created by Teja Priyan
  */
 
 // Helper utility
@@ -9,349 +10,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
 // ============================================================================
-// 1. PROCEDURAL WEB AUDIO ASMR ENGINE
-// ============================================================================
-class PopSoundEngine {
-  constructor() {
-    this.ctx = null;
-    this.dest = null;
-    this.masterGain = null;
-    this.analyser = null;
-    this.freqData = null;
-    this.enabled = true;
-    this.volume = 0.6;
-    this.soundType = 'bubble';
-    this.lastPopTime = 0;
-    this.minInterval = 0.038; // Up to ~26 satisfying pops per second max to prevent cacophony
-    this.beatTimer = null;
-    this.customBuffer = null;
-    this.customSource = null;
-    this.mode = 'asmr'; // 'asmr', 'synthwave', 'lofi', 'custom'
-  }
-
-  init() {
-    if (this.ctx) return;
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    this.ctx = new AudioContextClass();
-    
-    // Create MediaStream destination for recording audio into video
-    this.dest = this.ctx.createMediaStreamDestination();
-    
-    // Master Gain
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-
-    // Analyser for real-time Beat-Sync FFT
-    this.analyser = this.ctx.createAnalyser();
-    this.analyser.fftSize = 64;
-    this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    
-    // Connect master gain to both speaker destination, recording stream, and analyser
-    this.masterGain.connect(this.ctx.destination);
-    this.masterGain.connect(this.dest);
-    this.masterGain.connect(this.analyser);
-  }
-
-  getAudioEnergy() {
-    if (!this.analyser || !this.freqData) return { bass: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    let sum = 0;
-    for (let i = 0; i < 4; i++) sum += this.freqData[i] || 0;
-    return { bass: sum / (4 * 255) };
-  }
-
-  startBeats(style = 'synthwave') {
-    this.stopBeats();
-    this.init();
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-
-    this.mode = style;
-    const bpm = style === 'lofi' ? 82 : 120;
-    const intervalMs = (60 / bpm) * 1000 / 4; // 16th notes
-    let step = 0;
-
-    const synthBassNotes = [55, 55, 65.4, 55, 73.4, 65.4, 49, 52];
-
-    this.beatTimer = setInterval(() => {
-      if (isPaused || !this.enabled) return;
-      const now = this.ctx.currentTime;
-      const beat16 = step % 16;
-
-      // Kick drum
-      if (style === 'synthwave' && (beat16 === 0 || beat16 === 4 || beat16 === 8 || beat16 === 12)) {
-        this._playKick(now);
-      } else if (style === 'lofi' && (beat16 === 0 || beat16 === 6 || beat16 === 10)) {
-        this._playKick(now);
-      }
-
-      // Snare / Clap
-      if (beat16 === 4 || beat16 === 12) {
-        this._playSnare(now);
-      }
-
-      // Hi-Hat
-      if (beat16 % 2 === 0) {
-        this._playHiHat(now, beat16 % 4 === 2);
-      }
-
-      // Synth Bassline (in Synthwave mode)
-      if (style === 'synthwave' && beat16 % 2 === 0) {
-        const noteIdx = (step >> 1) % synthBassNotes.length;
-        this._playSynthBass(now, synthBassNotes[noteIdx]);
-      }
-
-      step++;
-    }, intervalMs);
-  }
-
-  stopBeats() {
-    if (this.beatTimer) {
-      clearInterval(this.beatTimer);
-      this.beatTimer = null;
-    }
-    if (this.customSource) {
-      try { this.customSource.stop(); } catch (_) {}
-      this.customSource = null;
-    }
-  }
-
-  async loadCustomAudio(file) {
-    this.stopBeats();
-    this.init();
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    this.mode = 'custom';
-    const arrayBuf = await file.arrayBuffer();
-    const decoded = await this.ctx.decodeAudioData(arrayBuf);
-    this.customBuffer = decoded;
-    this.playCustomAudio();
-  }
-
-  playCustomAudio() {
-    if (!this.customBuffer || !this.ctx) return;
-    if (this.customSource) {
-      try { this.customSource.stop(); } catch (_) {}
-    }
-    this.customSource = this.ctx.createBufferSource();
-    this.customSource.buffer = this.customBuffer;
-    this.customSource.loop = true;
-    this.customSource.connect(this.masterGain);
-    this.customSource.start(0);
-  }
-
-  _playKick(now) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.frequency.setValueAtTime(145, now);
-    osc.frequency.exponentialRampToValueAtTime(36, now + 0.18);
-    gain.gain.setValueAtTime(0.85 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.23);
-  }
-
-  _playSnare(now) {
-    const bufSize = Math.floor(this.ctx.sampleRate * 0.14);
-    const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1350;
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.48 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    noise.start(now);
-    noise.stop(now + 0.16);
-  }
-
-  _playHiHat(now, accent = false) {
-    const bufSize = Math.floor(this.ctx.sampleRate * 0.04);
-    const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 7500;
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime((accent ? 0.32 : 0.16) * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    noise.start(now);
-    noise.stop(now + 0.045);
-  }
-
-  _playSynthBass(now, freq) {
-    const osc = this.ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, now);
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(500, now);
-    filter.frequency.exponentialRampToValueAtTime(170, now + 0.12);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.42 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.15);
-  }
-
-  setVolume(val) {
-    this.volume = Math.max(0, Math.min(1, val));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-    }
-  }
-
-  triggerPop(pitchNorm = 0.5) {
-    if (!this.enabled) return;
-    if (!this.ctx) this.init();
-    if (!this.ctx) return;
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    const now = this.ctx.currentTime;
-    if (now - this.lastPopTime < this.minInterval) return;
-    this.lastPopTime = now;
-
-    switch (this.soundType) {
-      case 'retro':
-        this._playRetroBlip(now, pitchNorm);
-        break;
-      case 'woodblock':
-        this._playWoodblock(now, pitchNorm);
-        break;
-      case 'water':
-        this._playWaterDrop(now, pitchNorm);
-        break;
-      case 'click':
-        this._playClick(now, pitchNorm);
-        break;
-      case 'bubble':
-      default:
-        this._playBubblePop(now, pitchNorm);
-        break;
-    }
-  }
-
-  _playBubblePop(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const baseFreq = 260 + pitchNorm * 380; // 260Hz - 640Hz
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(baseFreq * 1.5, now);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + 0.05);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.065);
-  }
-
-  _playRetroBlip(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = 350 + Math.floor(pitchNorm * 8) * 75;
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.setValueAtTime(freq * 1.5, now + 0.02);
-
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.055);
-  }
-
-  _playWoodblock(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const filter = this.ctx.createBiquadFilter();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(500 + pitchNorm * 400, now);
-
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(800 + pitchNorm * 500, now);
-    filter.Q.value = 6.0;
-
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.05);
-  }
-
-  _playWaterDrop(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = 600 + pitchNorm * 600;
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.8, now + 0.04);
-
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.065);
-  }
-
-  _playClick(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(1400 + pitchNorm * 800, now);
-    osc.frequency.exponentialRampToValueAtTime(200, now + 0.02);
-
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.03);
-  }
-}
-
-const audio = new PopSoundEngine();
-
-// ============================================================================
-// 2. CANVAS & DIMENSIONS ENGINE
+// 1. CANVAS & DIMENSIONS ENGINE
 // ============================================================================
 const stageFrame = $('#stage-frame');
 const cv = $('#stage');
@@ -406,9 +65,7 @@ const ui = {
   pop: $('#pop'),
   elastic: $('#elastic'),
   bg: $('#bg'),
-  fitMode: $('#fit-mode'),
-  soundVol: $('#sound-vol'),
-  soundStyle: $('#sound-style')
+  fitMode: $('#fit-mode')
 };
 
 // State variables
@@ -711,9 +368,7 @@ function buildParticles() {
       }
 
       const delayMs = Math.min(1, Math.max(0, delayWeight)) * span;
-      const pitchNorm = (delayWeight + lum) * 0.5; // Modulates ASMR audio pitch
-
-      P.push([x, y, finalR, finalG, finalB, delayMs, pitchNorm]);
+      P.push([x, y, finalR, finalG, finalB, delayMs]);
     }
   }
 
@@ -737,36 +392,12 @@ function drawParticles(t) {
   cx.fillStyle = ui.bg.value;
   cx.fillRect(0, 0, W, H);
 
-  let activePopsCount = 0;
-  let dominantPitch = 0.5;
-
-  // Beat-Sync Energy Detection
-  let bassPulse = 0;
-  const beatSyncEnabled = $('#beat-sync') && $('#beat-sync').checked;
-  if (beatSyncEnabled) {
-    const energy = audio.getAudioEnergy();
-    bassPulse = energy.bass;
-    const vuFill = $('#vu-fill');
-    if (vuFill) {
-      vuFill.style.width = `${Math.min(100, Math.round(bassPulse * 100))}%`;
-    }
-  }
-
   for (let i = 0; i < P.length; i++) {
-    const [x, y, r, g, b, delay, pitch] = P[i];
+    const [x, y, r, g, b, delay] = P[i];
     const progress = Math.min(1, (t - delay) / popMs);
     if (progress <= 0) continue;
 
-    // Track sound trigger for active popping window
-    if (progress > 0.05 && progress < 0.4) {
-      activePopsCount++;
-      dominantPitch = pitch;
-    }
-
-    let scaleFactor = cellSize * 1.06 * Math.max(0, easeOvershoot(progress, elasticVal));
-    if (bassPulse > 0.08) {
-      scaleFactor *= (1.0 + bassPulse * 0.35);
-    }
+    const scaleFactor = cellSize * 1.06 * Math.max(0, easeOvershoot(progress, elasticVal));
 
     const mx = x + cellSize / 2;
     const my = y + cellSize / 2;
@@ -848,11 +479,6 @@ function drawParticles(t) {
     }
   }
 
-  // Trigger ASMR sound if active particles are emerging
-  if (activePopsCount > 0 && !isPaused && audio.mode === 'asmr') {
-    audio.triggerPop(dominantPitch);
-  }
-
   // Final high-res fade in smoothly reveals complete image detail at end
   const finishTime = parseFloat(ui.dur.value) * 1000;
   const fade = (t - finishTime) / 600;
@@ -862,48 +488,8 @@ function drawParticles(t) {
     cx.globalAlpha = 1;
   }
 
-  // Apply Retro FX Engine (CRT scanlines, RGB split chroma, VHS glitch)
-  applyRetroFX(cx, W, H, t);
-
   // Update timeline scrubber
   updatePlaybackUI(t);
-}
-
-function applyRetroFX(targetCtx, w, h, t) {
-  const crt = $('#fx-crt')?.checked;
-  const chroma = $('#fx-chroma')?.checked;
-  const vhs = $('#fx-vhs')?.checked;
-
-  if (chroma) {
-    targetCtx.save();
-    targetCtx.globalCompositeOperation = 'screen';
-    const offset = Math.floor(Math.sin(t * 0.008) * 3 + 2);
-    targetCtx.drawImage(targetCtx.canvas, -offset, 0);
-    targetCtx.restore();
-  }
-
-  if (vhs) {
-    if (Math.random() < 0.16) {
-      const sliceY = Math.random() * h;
-      const sliceH = 6 + Math.random() * 20;
-      const shiftX = (Math.random() - 0.5) * 14;
-      targetCtx.drawImage(targetCtx.canvas, 0, sliceY, w, sliceH, shiftX, sliceY, w, sliceH);
-    }
-  }
-
-  if (crt) {
-    targetCtx.save();
-    targetCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-    for (let y = 0; y < h; y += 3) {
-      targetCtx.fillRect(0, y, w, 1);
-    }
-    const vig = targetCtx.createRadialGradient(w / 2, h / 2, w * 0.35, w / 2, h / 2, w * 0.72);
-    vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    vig.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
-    targetCtx.fillStyle = vig;
-    targetCtx.fillRect(0, 0, w, h);
-    targetCtx.restore();
-  }
 }
 
 function updatePlaybackUI(t) {
@@ -969,7 +555,7 @@ function animationLoop(timestamp) {
 }
 
 // ============================================================================
-// 7. RECORDING & VIDEO EXPORT (WITH ASMR AUDIO!)
+// 7. RECORDING & 60 FPS VIDEO EXPORT
 // ============================================================================
 function recordVideo() {
   if (!window.MediaRecorder) {
@@ -977,14 +563,11 @@ function recordVideo() {
     return;
   }
 
-  // Audio setup
-  audio.init();
-
   const supportedTypes = [
     'video/mp4;codecs=avc1',
     'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
     'video/webm'
   ];
   const mimeType = supportedTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
@@ -993,31 +576,17 @@ function recordVideo() {
 
   // Video track at full 60 FPS
   const videoStream = cv.captureStream(60);
-  const tracks = [...videoStream.getVideoTracks()];
-
-  // Mux audio track if sound engine is active
-  if (audio.enabled && audio.dest) {
-    const audioTracks = audio.dest.stream.getAudioTracks();
-    if (audioTracks.length > 0) {
-      tracks.push(audioTracks[0]);
-    }
-  }
-
-  const combinedStream = new MediaStream(tracks);
   const chunks = [];
 
   let mr;
   try {
-    mr = new MediaRecorder(combinedStream, {
+    mr = new MediaRecorder(videoStream, {
       mimeType,
       videoBitsPerSecond: 14e6 // High-definition 14 Mbps
     });
   } catch (err) {
-    console.warn('Audio-video combined recording failed, falling back to video-only', err);
-    mr = new MediaRecorder(videoStream, {
-      mimeType,
-      videoBitsPerSecond: 14e6
-    });
+    console.warn('Recording init with mimeType failed, falling back to default', err);
+    mr = new MediaRecorder(videoStream);
   }
   recorder = mr;
 
@@ -1027,15 +596,15 @@ function recordVideo() {
 
   recorder.onstop = () => {
     const blob = new Blob(chunks, { type: mimeType });
-    const filename = `pixel-reveal-${currentRatioKey.replace(':', 'x')}-${Date.now()}.${isMp4 ? 'mp4' : 'webm'}`;
+    const filename = `popsel-${currentRatioKey.replace(':', 'x')}-${Date.now()}.${isMp4 ? 'mp4' : 'webm'}`;
     saveFile(blob, filename);
 
     btn.disabled = false;
     btn.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-      <span>Download 60 FPS Video (with Audio)</span>
+      <span>Download 60 FPS Video</span>
     `;
-    $('#msg-text').textContent = 'Video exported successfully!';
+    $('#msg-text').textContent = 'Popsel video exported successfully!';
   };
 
   btn.disabled = true;
@@ -1319,23 +888,14 @@ $$('.tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     const vPop = $('#v-pop');
     const vBa = $('#v-ba');
-    const vCam = $('#v-cam');
 
-    if (tab === 'cam') {
-      vPop.hidden = true;
-      vBa.hidden = true;
-      vCam.hidden = false;
-    } else if (tab === 'ba') {
+    if (tab === 'ba') {
       vPop.hidden = true;
       vBa.hidden = false;
-      vCam.hidden = true;
-      stopWebcamMirror();
       drawBA();
     } else {
       vPop.hidden = false;
       vBa.hidden = true;
-      vCam.hidden = true;
-      stopWebcamMirror();
       vPop.dataset.mode = tab;
 
       const isSlide = tab === 'slide';
@@ -1350,7 +910,7 @@ $$('.tab-btn').forEach(btn => {
         else renderDemoArtwork();
       } else {
         $('#mode-heading').textContent = 'Your photo, one pop at a time.';
-        $('#mode-sub').textContent = 'Upload any image. Tiny animated dots burst and bounce into place with tactile ASMR pops.';
+        $('#mode-sub').textContent = 'Upload any image. Tiny animated dots burst and bounce into place — mesmerizing pixel art in motion.';
         if (curImg) fitImage(curImg);
         else renderDemoArtwork();
       }
@@ -1444,52 +1004,6 @@ ui.bg.oninput = () => {
   $('#bg-hex').textContent = ui.bg.value;
 };
 
-// Sound Widget
-$('#sound-toggle').onclick = () => {
-  audio.init();
-  audio.enabled = !audio.enabled;
-  const isMuted = !audio.enabled;
-  $('#sound-toggle').classList.toggle('muted', isMuted);
-  $('.icon-sound-on').style.display = isMuted ? 'none' : 'block';
-  $('.icon-sound-off').style.display = isMuted ? 'block' : 'none';
-  $('#hud-audio').textContent = isMuted ? '🔇 Audio OFF' : `🫧 ${ui.soundStyle.options[ui.soundStyle.selectedIndex].text}`;
-  $('#hud-audio').classList.toggle('audio-pill', !isMuted);
-};
-
-ui.soundVol.oninput = () => {
-  const val = parseFloat(ui.soundVol.value);
-  audio.setVolume(val);
-  $('#vol-val').textContent = `${Math.round(val * 100)}%`;
-};
-
-ui.soundStyle.onchange = () => {
-  audio.soundType = ui.soundStyle.value;
-  $('#hud-audio').textContent = `🫧 ${ui.soundStyle.options[ui.soundStyle.selectedIndex].text}`;
-};
-
-// Canvas Click - Ripple epicenter & visual marker
-cv.onclick = e => {
-  audio.init();
-  const rect = cv.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
-
-  origin = [clickX / rect.width, clickY / rect.height];
-
-  // Visual Ping wave
-  const ping = $('#ripple-ping');
-  ping.style.left = `${clickX}px`;
-  ping.style.top = `${clickY}px`;
-  ping.classList.remove('active');
-  void ping.offsetWidth; // trigger reflow
-  ping.classList.add('active');
-
-  if (ui.pattern.value === 'ripple') {
-    buildParticles();
-    T = 0;
-  }
-};
-
 // Play / Pause / Replay
 function togglePlayPause() {
   isPaused = !isPaused;
@@ -1527,16 +1041,13 @@ trackEl.addEventListener('pointermove', e => {
 trackEl.addEventListener('pointerup', () => { isScrubbing = false; });
 trackEl.addEventListener('pointercancel', () => { isScrubbing = false; });
 
-// Unlock Web Audio API on first user gesture
-window.addEventListener('pointerdown', () => {
-  if (audio && audio.enabled) audio.init();
-}, { once: true });
+
 
 // Export Handlers
 $('#rec').onclick = recordVideo;
 $('#png').onclick = () => {
   drawParticles(totalDuration);
-  cv.toBlob(blob => saveFile(blob, `pixel-reveal-${currentRatioKey.replace(':', 'x')}.png`));
+  cv.toBlob(blob => saveFile(blob, `popsel-${currentRatioKey.replace(':', 'x')}-${Date.now()}.png`));
 };
 
 // Web Share API
@@ -1544,10 +1055,10 @@ $('#share-btn').onclick = async () => {
   if (navigator.share) {
     try {
       cv.toBlob(async blob => {
-        const file = new File([blob], 'pixel-reveal.png', { type: 'image/png' });
+        const file = new File([blob], 'popsel-reveal.png', { type: 'image/png' });
         await navigator.share({
-          title: 'Pixel Reveal Studio',
-          text: 'Check out this photo reveal made with Pixel Reveal Studio!',
+          title: 'Popsel',
+          text: 'Check out this photo reveal made with Popsel!',
           files: [file]
         });
       });
@@ -1594,47 +1105,6 @@ window.addEventListener('keydown', e => {
   } else if (e.code === 'KeyR') {
     $('#quick-replay').click();
   }
-});
-
-// Soundtrack Mode selector (ASMR, Synthwave, Lo-Fi, Custom)
-const soundtrackSelect = $('#soundtrack-mode');
-if (soundtrackSelect) {
-  soundtrackSelect.onchange = () => {
-    const mode = soundtrackSelect.value;
-    const customWrap = $('#custom-audio-wrap');
-    if (customWrap) customWrap.style.display = (mode === 'custom') ? 'block' : 'none';
-
-    if (mode === 'synthwave' || mode === 'lofi') {
-      audio.startBeats(mode);
-      $('#hud-audio').textContent = `🎧 ${mode.toUpperCase()} Beats`;
-      $('#hud-audio').classList.add('audio-pill');
-    } else if (mode === 'custom') {
-      if (audio.customBuffer) audio.playCustomAudio();
-      $('#hud-audio').textContent = '🎶 Custom Track';
-      $('#hud-audio').classList.add('audio-pill');
-    } else {
-      audio.stopBeats();
-      audio.mode = 'asmr';
-      $('#hud-audio').textContent = `🫧 ${ui.soundStyle.options[ui.soundStyle.selectedIndex].text}`;
-    }
-  };
-}
-
-const musicFileInput = $('#music-file');
-if (musicFileInput) {
-  musicFileInput.onchange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      audio.loadCustomAudio(file);
-      $('#msg-text').textContent = `Loaded music: ${file.name}`;
-    }
-  };
-}
-
-// Retro FX Checkbox change handlers - redraw immediately
-['#fx-crt', '#fx-chroma', '#fx-vhs'].forEach(selector => {
-  const el = $(selector);
-  if (el) el.onchange = () => drawParticles(T);
 });
 
 // ============================================================================
@@ -1850,175 +1320,14 @@ function lzwEncode(minCodeSize, pixels, outBytes) {
 }
 
 // ============================================================================
-// 8. LIVE WEBCAM PIXEL MIRROR ENGINE
+// 8. POPSEL BRANDING & INIT
 // ============================================================================
-let webcamStream = null;
-let webcamVideo = null;
-let camAnimationId = null;
-let isCamRecording = false;
+// (Live Mirror feature removed - Popsel focuses on photo pixel reveal)
 
-async function startWebcamMirror() {
-  const btn = $('#cam-start-btn');
-  const msg = $('#cam-msg');
-  if (webcamStream) {
-    stopWebcamMirror();
-    return;
-  }
-  try {
-    msg.textContent = 'Requesting camera access...';
-    webcamStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 720 }, height: { ideal: 720 }, facingMode: 'user' }
-    });
-    webcamVideo = document.createElement('video');
-    webcamVideo.srcObject = webcamStream;
-    webcamVideo.autoplay = true;
-    webcamVideo.playsInline = true;
-    webcamVideo.muted = true;
-    await webcamVideo.play();
-
-    btn.textContent = '⏹ Stop Camera';
-    msg.textContent = 'Camera active! Watching in real-time.';
-    runWebcamLoop();
-  } catch (err) {
-    console.error('Webcam error', err);
-    msg.textContent = 'Camera permission denied or camera not found.';
-  }
-}
-
-function stopWebcamMirror() {
-  if (camAnimationId) {
-    cancelAnimationFrame(camAnimationId);
-    camAnimationId = null;
-  }
-  if (webcamStream) {
-    webcamStream.getTracks().forEach(t => t.stop());
-    webcamStream = null;
-  }
-  const btn = $('#cam-start-btn');
-  if (btn) btn.textContent = '🎥 Start Camera Mirror';
-  const msg = $('#cam-msg');
-  if (msg) msg.textContent = 'Camera stopped.';
-}
-
-function runWebcamLoop() {
-  const camCv = $('#cam-stage');
-  if (!camCv || !webcamVideo) return;
-  const ctx = camCv.getContext('2d');
-  const w = camCv.width;
-  const h = camCv.height;
-
-  function renderCamFrame() {
-    if (!webcamStream || webcamVideo.paused || webcamVideo.ended) return;
-
-    const cell = parseInt($('#cam-cell').value, 10);
-    const filter = $('#cam-filter').value;
-    const cols = Math.floor(w / cell);
-    const rows = Math.floor(h / cell);
-
-    const off = document.createElement('canvas');
-    off.width = cols;
-    off.height = rows;
-    const offCtx = off.getContext('2d');
-    offCtx.drawImage(webcamVideo, 0, 0, cols, rows);
-    const imgData = offCtx.getImageData(0, 0, cols, rows).data;
-
-    ctx.fillStyle = '#09060f';
-    ctx.fillRect(0, 0, w, h);
-
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        const idx = (y * cols + x) * 4;
-        let r = imgData[idx];
-        let g = imgData[idx + 1];
-        let b = imgData[idx + 2];
-
-        if (filter === 'cyberpunk') {
-          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-          r = Math.min(255, Math.floor(lum * 255 + 40));
-          g = Math.floor(lum * 60);
-          b = Math.min(255, Math.floor((1 - lum) * 120 + 135));
-        } else if (filter === 'gameboy') {
-          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-          if (lum < 0.25) [r, g, b] = [15, 56, 15];
-          else if (lum < 0.5) [r, g, b] = [48, 98, 48];
-          else if (lum < 0.75) [r, g, b] = [139, 172, 15];
-          else [r, g, b] = [155, 188, 15];
-        } else if (filter === 'noir') {
-          const lum = Math.floor(0.299 * r + 0.587 * g + 0.114 * b);
-          r = g = b = lum;
-        } else if (filter === 'matrix') {
-          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-          r = 0;
-          g = Math.min(255, Math.floor(lum * 255 + 60));
-          b = Math.floor(lum * 40);
-        }
-
-        const px = x * cell + cell / 2;
-        const py = y * cell + cell / 2;
-        const rad = (cell / 2) * 0.9;
-
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.beginPath();
-        ctx.arc(px, py, rad, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    applyRetroFX(ctx, w, h, performance.now());
-    camAnimationId = requestAnimationFrame(renderCamFrame);
-  }
-
-  renderCamFrame();
-}
-
-if ($('#cam-start-btn')) $('#cam-start-btn').onclick = startWebcamMirror;
-if ($('#cam-cell')) {
-  $('#cam-cell').oninput = () => {
-    $('#cam-cellv').textContent = `${$('#cam-cell').value} px`;
-  };
-}
-
-if ($('#cam-snap')) {
-  $('#cam-snap').onclick = () => {
-    const camCv = $('#cam-stage');
-    camCv.toBlob(blob => saveFile(blob, `pixel-mirror-${Date.now()}.png`));
-    $('#cam-msg').textContent = 'Captured still art snapshot!';
-  };
-}
-
-if ($('#cam-rec')) {
-  $('#cam-rec').onclick = () => {
-    if (isCamRecording) return;
-    const camCv = $('#cam-stage');
-    const stream = camCv.captureStream(30);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-    const chunks = [];
-    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      saveFile(blob, `pixel-mirror-${Date.now()}.webm`);
-      isCamRecording = false;
-      $('#cam-rec-label').textContent = 'Record 5s Reel';
-      $('#cam-msg').textContent = 'Recorded and saved 5-second video!';
-    };
-
-    recorder.start();
-    isCamRecording = true;
-    let remaining = 5;
-    $('#cam-rec-label').textContent = `Recording (${remaining}s)...`;
-    const countdown = setInterval(() => {
-      remaining--;
-      if (remaining > 0) {
-        $('#cam-rec-label').textContent = `Recording (${remaining}s)...`;
-      } else {
-        clearInterval(countdown);
-        recorder.stop();
-      }
-    }, 1000);
-  };
-}
-
-// Initialize Studio
+// Initialize Popsel Studio
 setAspectRatio('1:1');
 initBeforeAfter();
 requestAnimationFrame(animationLoop);
+
+
+

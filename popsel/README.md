@@ -36,7 +36,6 @@
 | 🎨 **6 Aesthetic Filters** | Tokyo Cyberpunk, GameBoy 1989, Lofi Sunset, Cinema Noir, Matrix, Vaporwave |
 | ⚡ **7 Reveal Physics** | Random Scatter, Sweep Left-to-Right, Sweep Top-to-Bottom, Ripple Wave, Spiral, Shadows First, Contour Outlines |
 | 🔷 **7 Dot Shapes** | Bubble Circle, Retro Square, Diamond, Hexagon, Star, Cross, Heart |
-| 📺 **Retro FX Engine** | CRT Scanlines, RGB Split (Chroma), VHS Glitch |
 | 📐 **4 Aspect Ratios** | 9:16 Story, 1:1 Square, 4:5 Feed, 16:9 Widescreen |
 | 📤 **Multi-Format Export** | 60 FPS HD MP4/WebM video, Animated GIF sticker, HD PNG snapshot |
 | ⌨️ **Keyboard Shortcuts** | Space to pause/play, R to replay |
@@ -71,7 +70,7 @@ npx serve ./popsel
 1. **Upload a photo** — drag & drop onto the canvas, click to browse, or pick one of the sample photos
 2. **Choose your aspect ratio** — 9:16 for TikTok/Reels/Shorts, 1:1 for Instagram, 16:9 for YouTube
 3. **Adjust physics** — pixel block size, reveal pattern, dot shape, animation duration, bounce elasticity
-4. **Apply a filter or retro effect** — Cyberpunk, GameBoy, CRT Scanlines, VHS Glitch, or original colors
+4. **Apply an aesthetic filter** — Tokyo Cyberpunk, GameBoy, Lofi Sunset, Cinema Noir, Matrix, Vaporwave, or original colors
 5. **Export** — download as a 60 FPS MP4/WebM video, animated GIF sticker, or PNG snapshot
 
 ---

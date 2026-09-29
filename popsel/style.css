@@ -989,78 +989,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* ==========================================================================
-   RETRO FX & POST EFFECTS STYLING
-   ========================================================================== */
-.section-title-badge {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.9rem;
-}
-
-.badge-feature {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-full);
-  background: rgba(0, 245, 212, 0.12);
-  color: var(--electric-teal);
-  border: 1px solid rgba(0, 245, 212, 0.3);
-}
-
-/* Retro FX Toggles */
-.fx-toggles-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-}
-
-.fx-chip {
-  cursor: pointer;
-  user-select: none;
-}
-
-.fx-chip input {
-  display: none;
-}
-
-.fx-chip-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.75rem 0.5rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.04);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  text-align: center;
-}
-
-.fx-chip:hover .fx-chip-content {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--border-active);
-}
-
-.fx-chip input:checked + .fx-chip-content {
-  background: rgba(0, 245, 212, 0.14);
-  border-color: var(--electric-teal);
-  box-shadow: 0 0 15px var(--electric-teal-glow);
-}
-
-.fx-icon {
-  font-size: 1.3rem;
-}
-
-.fx-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-/* ==========================================================================
    BEFORE AND AFTER MODE
    ========================================================================== */
 #ba-stage-frame {
@@ -1685,26 +1613,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .grid-2 {
     grid-template-columns: 1fr;
     gap: 0.75rem;
-  }
-
-  .fx-toggles-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.4rem;
-  }
-
-  .fx-chip-content {
-    padding: 0.65rem 0.25rem;
-  }
-
-  .fx-icon {
-    font-size: 1.15rem;
-  }
-
-  .fx-title {
-    font-size: 0.68rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .btn-export {
