@@ -1,354 +1,29 @@
-﻿/**
- * Pixel Studio 2026 - Audio-Reactive Popsel
- * High-performance Canvas 2D engine with procedural Web Audio ASMR synthesis,
+/**
+ * Popsel - Mesmerizing Pixel Reveal Studio
+ * High-performance Canvas 2D engine with procedural particle reveals,
  * multi-aspect ratio rendering, and 60 FPS video export.
+ * Created by Teja Priyan
  */
 
 // Helper utility
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
-// ============================================================================
-// 1. PROCEDURAL WEB AUDIO ASMR ENGINE
-// ============================================================================
-class PopSoundEngine {
-  constructor() {
-    this.ctx = null;
-    this.dest = null;
-    this.masterGain = null;
-    this.analyser = null;
-    this.freqData = null;
-    this.enabled = false; // OFF by default — user must explicitly choose an audio option
-    this.volume = 0.6;
-    this.soundType = 'bubble';
-    this.lastPopTime = 0;
-    this.minInterval = 0.038; // Up to ~26 satisfying pops per second max to prevent cacophony
-    this.beatTimer = null;
-    this.customBuffer = null;
-    this.customSource = null;
-    this.mode = 'asmr'; // 'asmr', 'synthwave', 'lofi', 'custom'
-  }
-
-  init() {
-    if (this.ctx) return;
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    this.ctx = new AudioContextClass();
-    
-    // Create MediaStream destination for recording audio into video
-    this.dest = this.ctx.createMediaStreamDestination();
-    
-    // Master Gain
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-
-    // Analyser for real-time Beat-Sync FFT
-    this.analyser = this.ctx.createAnalyser();
-    this.analyser.fftSize = 64;
-    this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    
-    // Connect master gain to both speaker destination, recording stream, and analyser
-    this.masterGain.connect(this.ctx.destination);
-    this.masterGain.connect(this.dest);
-    this.masterGain.connect(this.analyser);
-  }
-
-  getAudioEnergy() {
-    if (!this.analyser || !this.freqData) return { bass: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    let sum = 0;
-    for (let i = 0; i < 4; i++) sum += this.freqData[i] || 0;
-    return { bass: sum / (4 * 255) };
-  }
-
-  startBeats(style = 'synthwave') {
-    this.stopBeats();
-    this.init();
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-
-    this.mode = style;
-    const bpm = style === 'lofi' ? 82 : 120;
-    const intervalMs = (60 / bpm) * 1000 / 4; // 16th notes
-    let step = 0;
-
-    const synthBassNotes = [55, 55, 65.4, 55, 73.4, 65.4, 49, 52];
-
-    this.beatTimer = setInterval(() => {
-      if (isPaused || !this.enabled) return;
-      const now = this.ctx.currentTime;
-      const beat16 = step % 16;
-
-      // Kick drum
-      if (style === 'synthwave' && (beat16 === 0 || beat16 === 4 || beat16 === 8 || beat16 === 12)) {
-        this._playKick(now);
-      } else if (style === 'lofi' && (beat16 === 0 || beat16 === 6 || beat16 === 10)) {
-        this._playKick(now);
-      }
-
-      // Snare / Clap
-      if (beat16 === 4 || beat16 === 12) {
-        this._playSnare(now);
-      }
-
-      // Hi-Hat
-      if (beat16 % 2 === 0) {
-        this._playHiHat(now, beat16 % 4 === 2);
-      }
-
-      // Synth Bassline (in Synthwave mode)
-      if (style === 'synthwave' && beat16 % 2 === 0) {
-        const noteIdx = (step >> 1) % synthBassNotes.length;
-        this._playSynthBass(now, synthBassNotes[noteIdx]);
-      }
-
-      step++;
-    }, intervalMs);
-  }
-
-  stopBeats() {
-    if (this.beatTimer) {
-      clearInterval(this.beatTimer);
-      this.beatTimer = null;
-    }
-    if (this.customSource) {
-      try { this.customSource.stop(); } catch (_) {}
-      this.customSource = null;
-    }
-  }
-
-  async loadCustomAudio(file) {
-    this.stopBeats();
-    this.init();
-    if (this.ctx.state === 'suspended') this.ctx.resume();
-    this.mode = 'custom';
-    const arrayBuf = await file.arrayBuffer();
-    const decoded = await this.ctx.decodeAudioData(arrayBuf);
-    this.customBuffer = decoded;
-    this.playCustomAudio();
-  }
-
-  playCustomAudio() {
-    if (!this.customBuffer || !this.ctx) return;
-    if (this.customSource) {
-      try { this.customSource.stop(); } catch (_) {}
-    }
-    this.customSource = this.ctx.createBufferSource();
-    this.customSource.buffer = this.customBuffer;
-    this.customSource.loop = true;
-    this.customSource.connect(this.masterGain);
-    this.customSource.start(0);
-  }
-
-  _playKick(now) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.frequency.setValueAtTime(145, now);
-    osc.frequency.exponentialRampToValueAtTime(36, now + 0.18);
-    gain.gain.setValueAtTime(0.85 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.23);
-  }
-
-  _playSnare(now) {
-    const bufSize = Math.floor(this.ctx.sampleRate * 0.14);
-    const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1350;
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.48 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    noise.start(now);
-    noise.stop(now + 0.16);
-  }
-
-  _playHiHat(now, accent = false) {
-    const bufSize = Math.floor(this.ctx.sampleRate * 0.04);
-    const buffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 7500;
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime((accent ? 0.32 : 0.16) * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    noise.start(now);
-    noise.stop(now + 0.045);
-  }
-
-  _playSynthBass(now, freq) {
-    const osc = this.ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, now);
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(500, now);
-    filter.frequency.exponentialRampToValueAtTime(170, now + 0.12);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.42 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    osc.start(now);
-    osc.stop(now + 0.15);
-  }
-
-  setVolume(val) {
-    this.volume = Math.max(0, Math.min(1, val));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-    }
-  }
-
-  triggerPop(pitchNorm = 0.5) {
-    if (!this.enabled) return;
-    if (!this.ctx) this.init();
-    if (!this.ctx) return;
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    const now = this.ctx.currentTime;
-    if (now - this.lastPopTime < this.minInterval) return;
-    this.lastPopTime = now;
-
-    switch (this.soundType) {
-      case 'retro':
-        this._playRetroBlip(now, pitchNorm);
-        break;
-      case 'woodblock':
-        this._playWoodblock(now, pitchNorm);
-        break;
-      case 'water':
-        this._playWaterDrop(now, pitchNorm);
-        break;
-      case 'click':
-        this._playClick(now, pitchNorm);
-        break;
-      case 'bubble':
-      default:
-        this._playBubblePop(now, pitchNorm);
-        break;
-    }
-  }
-
-  _playBubblePop(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const baseFreq = 260 + pitchNorm * 380; // 260Hz - 640Hz
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(baseFreq * 1.5, now);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + 0.05);
-
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.065);
-  }
-
-  _playRetroBlip(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = 350 + Math.floor(pitchNorm * 8) * 75;
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.setValueAtTime(freq * 1.5, now + 0.02);
-
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.055);
-  }
-
-  _playWoodblock(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const filter = this.ctx.createBiquadFilter();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(500 + pitchNorm * 400, now);
-
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(800 + pitchNorm * 500, now);
-    filter.Q.value = 6.0;
-
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.05);
-  }
-
-  _playWaterDrop(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const freq = 600 + pitchNorm * 600;
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.8, now + 0.04);
-
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.065);
-  }
-
-  _playClick(now, pitchNorm) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(1400 + pitchNorm * 800, now);
-    osc.frequency.exponentialRampToValueAtTime(200, now + 0.02);
-
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-
-    osc.start(now);
-    osc.stop(now + 0.03);
-  }
-}
-
-const audio = new PopSoundEngine();
+// Clean no-op audio stub (audio removed per user preference)
+const audio = {
+  enabled: false,
+  mode: 'none',
+  soundType: 'none',
+  init() {},
+  triggerPop() {},
+  getAudioEnergy() { return { bass: 0 }; },
+  startBeats() {},
+  stopBeats() {},
+  setVolume() {},
+  loadCustomAudio() {},
+  dest: null,
+  ctx: null
+};
 
 // ============================================================================
 // 2. CANVAS & DIMENSIONS ENGINE
@@ -406,9 +81,7 @@ const ui = {
   pop: $('#pop'),
   elastic: $('#elastic'),
   bg: $('#bg'),
-  fitMode: $('#fit-mode'),
-  soundVol: $('#sound-vol'),
-  soundStyle: $('#sound-style')
+  fitMode: $('#fit-mode')
 };
 
 // State variables
@@ -977,14 +650,11 @@ function recordVideo() {
     return;
   }
 
-  // Audio setup
-  audio.init();
-
   const supportedTypes = [
     'video/mp4;codecs=avc1',
     'video/mp4',
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
     'video/webm'
   ];
   const mimeType = supportedTypes.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
@@ -993,40 +663,23 @@ function recordVideo() {
 
   // Video track at full 60 FPS
   const videoStream = cv.captureStream(60);
-  const tracks = [...videoStream.getVideoTracks()];
-  const soundtrackVal = $('#soundtrack-mode')?.value;
-
-  // Mux audio track only if audio is enabled AND not silent mode
-  if (audio.enabled && soundtrackVal !== 'none' && audio.dest) {
-    const audioTracks = audio.dest.stream.getAudioTracks();
-    if (audioTracks.length > 0) {
-      tracks.push(audioTracks[0]);
-    }
-  }
-
-  const combinedStream = new MediaStream(tracks);
   const chunks = [];
 
   let mr;
   try {
-    mr = new MediaRecorder(combinedStream, {
+    mr = new MediaRecorder(videoStream, {
       mimeType,
       videoBitsPerSecond: 14e6 // High-definition 14 Mbps
     });
   } catch (err) {
-    console.warn('Audio-video combined recording failed, falling back to video-only', err);
-    mr = new MediaRecorder(videoStream, {
-      mimeType,
-      videoBitsPerSecond: 14e6
-    });
+    console.warn('Recording init with mimeType failed, falling back to default', err);
+    mr = new MediaRecorder(videoStream);
   }
   recorder = mr;
 
   recorder.ondataavailable = e => {
     if (e.data && e.data.size > 0) chunks.push(e.data);
   };
-
-  const isSilent = !audio.enabled || $('#soundtrack-mode')?.value === 'none';
 
   recorder.onstop = () => {
     const blob = new Blob(chunks, { type: mimeType });
@@ -1036,7 +689,7 @@ function recordVideo() {
     btn.disabled = false;
     btn.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-      <span>Download 60 FPS Video ${isSilent ? '(Silent)' : '(with Audio)'}</span>
+      <span>Download 60 FPS Video</span>
     `;
     $('#msg-text').textContent = 'Popsel video exported successfully!';
   };
@@ -1344,7 +997,7 @@ $$('.tab-btn').forEach(btn => {
         else renderDemoArtwork();
       } else {
         $('#mode-heading').textContent = 'Your photo, one pop at a time.';
-        $('#mode-sub').textContent = 'Upload any image. Tiny animated dots burst and bounce into place with tactile ASMR pops.';
+        $('#mode-sub').textContent = 'Upload any image. Tiny animated dots burst and bounce into place — mesmerizing pixel art in motion.';
         if (curImg) fitImage(curImg);
         else renderDemoArtwork();
       }
@@ -1438,80 +1091,6 @@ ui.bg.oninput = () => {
   $('#bg-hex').textContent = ui.bg.value;
 };
 
-// Sound Widget (header toggle)
-$('#sound-toggle').onclick = () => {
-  audio.init();
-  audio.enabled = !audio.enabled;
-  const isMuted = !audio.enabled;
-  $('#sound-toggle').classList.toggle('muted', isMuted);
-  $('.icon-sound-on').style.display = isMuted ? 'none' : 'block';
-  $('.icon-sound-off').style.display = isMuted ? 'block' : 'none';
-
-  const badge = $('#badge-audio-status');
-  if (isMuted) {
-    $('#hud-audio').textContent = '🔇 SILENT VIDEO';
-    $('#hud-audio').classList.remove('audio-pill');
-    if (badge) { badge.textContent = '🔇 SILENT'; badge.style.background = 'rgba(255,255,255,0.08)'; }
-  } else {
-    // If dropdown still on 'none', auto-switch to bubble pop
-    const st = $('#soundtrack-mode');
-    if (st && st.value === 'none') { st.value = 'bubble'; }
-    const label = ui.soundStyle?.options?.[ui.soundStyle?.selectedIndex]?.text || 'Sound';
-    $('#hud-audio').textContent = `🫧 ${label}`;
-    $('#hud-audio').classList.add('audio-pill');
-    if (badge) { badge.textContent = '🔊 AUDIO ON'; badge.style.background = ''; }
-  }
-};
-
-ui.soundVol.oninput = () => {
-  const val = parseFloat(ui.soundVol.value);
-  audio.setVolume(val);
-  $('#vol-val').textContent = `${Math.round(val * 100)}%`;
-  // Sync panel slider
-  const panelVol = $('#sound-vol-panel');
-  if (panelVol) { panelVol.value = val; $('#vol-val-panel').textContent = `${Math.round(val * 100)}%`; }
-};
-
-ui.soundStyle.onchange = () => {
-  audio.soundType = ui.soundStyle.value;
-  $('#hud-audio').textContent = `🫧 ${ui.soundStyle.options[ui.soundStyle.selectedIndex].text}`;
-};
-
-// Sync panel volume slider with header volume
-const panelVolSlider = $('#sound-vol-panel');
-if (panelVolSlider) {
-  panelVolSlider.oninput = () => {
-    const val = parseFloat(panelVolSlider.value);
-    audio.setVolume(val);
-    $('#vol-val-panel').textContent = `${Math.round(val * 100)}%`;
-    ui.soundVol.value = val;
-    $('#vol-val').textContent = `${Math.round(val * 100)}%`;
-  };
-}
-
-// Canvas Click - Ripple epicenter & visual marker
-cv.onclick = e => {
-  audio.init();
-  const rect = cv.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
-
-  origin = [clickX / rect.width, clickY / rect.height];
-
-  // Visual Ping wave
-  const ping = $('#ripple-ping');
-  ping.style.left = `${clickX}px`;
-  ping.style.top = `${clickY}px`;
-  ping.classList.remove('active');
-  void ping.offsetWidth; // trigger reflow
-  ping.classList.add('active');
-
-  if (ui.pattern.value === 'ripple') {
-    buildParticles();
-    T = 0;
-  }
-};
-
 // Play / Pause / Replay
 function togglePlayPause() {
   isPaused = !isPaused;
@@ -1549,10 +1128,7 @@ trackEl.addEventListener('pointermove', e => {
 trackEl.addEventListener('pointerup', () => { isScrubbing = false; });
 trackEl.addEventListener('pointercancel', () => { isScrubbing = false; });
 
-// Unlock Web Audio API on first user gesture
-window.addEventListener('pointerdown', () => {
-  if (audio && audio.enabled) audio.init();
-}, { once: true });
+
 
 // Export Handlers
 $('#rec').onclick = recordVideo;
@@ -1617,57 +1193,6 @@ window.addEventListener('keydown', e => {
     $('#quick-replay').click();
   }
 });
-
-// Soundtrack Mode selector (ASMR, Synthwave, Lo-Fi, Custom, None/Silent)
-const soundtrackSelect = $('#soundtrack-mode');
-if (soundtrackSelect) {
-  soundtrackSelect.onchange = () => {
-    const mode = soundtrackSelect.value;
-    const customWrap = $('#custom-audio-wrap');
-    if (customWrap) customWrap.style.display = (mode === 'custom') ? 'block' : 'none';
-    const badgeEl = $('#badge-audio-status');
-
-    if (mode === 'none') {
-      // Silent video mode – stop all audio
-      audio.stopBeats();
-      audio.enabled = false;
-      $('#hud-audio').textContent = '🔇 SILENT VIDEO';
-      $('#hud-audio').classList.remove('audio-pill');
-      if (badgeEl) { badgeEl.textContent = '🔇 SILENT'; badgeEl.style.background = 'rgba(255,255,255,0.08)'; }
-    } else if (mode === 'synthwave' || mode === 'lofi') {
-      audio.enabled = true;
-      audio.startBeats(mode);
-      $('#hud-audio').textContent = `🎧 ${mode.toUpperCase()} Beats`;
-      $('#hud-audio').classList.add('audio-pill');
-      if (badgeEl) { badgeEl.textContent = '🔊 AUDIO ON'; badgeEl.style.background = ''; }
-    } else if (mode === 'custom') {
-      audio.enabled = true;
-      if (audio.customBuffer) audio.playCustomAudio();
-      $('#hud-audio').textContent = '🎶 Custom Track';
-      $('#hud-audio').classList.add('audio-pill');
-      if (badgeEl) { badgeEl.textContent = '🔊 AUDIO ON'; badgeEl.style.background = ''; }
-    } else {
-      audio.enabled = true;
-      audio.stopBeats();
-      audio.mode = 'asmr';
-      audio.soundType = mode;
-      $('#hud-audio').textContent = `🫧 ${soundtrackSelect.options[soundtrackSelect.selectedIndex].text}`;
-      $('#hud-audio').classList.add('audio-pill');
-      if (badgeEl) { badgeEl.textContent = '🔊 AUDIO ON'; badgeEl.style.background = ''; }
-    }
-  };
-}
-
-const musicFileInput = $('#music-file');
-if (musicFileInput) {
-  musicFileInput.onchange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      audio.loadCustomAudio(file);
-      $('#msg-text').textContent = `Loaded music: ${file.name}`;
-    }
-  };
-}
 
 // Retro FX Checkbox change handlers - redraw immediately
 ['#fx-crt', '#fx-chroma', '#fx-vhs'].forEach(selector => {
@@ -1897,16 +1422,5 @@ setAspectRatio('1:1');
 initBeforeAfter();
 requestAnimationFrame(animationLoop);
 
-// Set audio to silent state on startup
-(function initSilentMode() {
-  const hudAudio = $('#hud-audio');
-  if (hudAudio) {
-    hudAudio.textContent = '🔇 SILENT VIDEO';
-    hudAudio.classList.remove('audio-pill');
-  }
-  const badge = $('#badge-audio-status');
-  if (badge) {
-    badge.textContent = '🔇 SILENT';
-    badge.style.background = 'rgba(255,255,255,0.08)';
-  }
-})();
+
+
