@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Reveal Studio – Audio-Reactive Art & Video</title>
+  <meta name="description" content="Turn any photo into an ASMR popping-pixel reveal video. Custom aspect ratios (9:16, 1:1, 16:9), procedural bubble pop sounds, cyberpunk aesthetics, and instant 60 FPS export.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="top-bar">
+    <div class="brand">
+      <a href="#" class="logo">
+        <span class="logo-dot"></span>
+        <span class="logo-text">pixel studio</span>
+      </a>
+      <span class="version-tag">2026 STUDIO</span>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <nav class="mode-tabs" aria-label="Editor Modes">
+      <button class="tab-btn active" data-tab="pop" id="tab-pop">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 14.83 4.24 4.24"/></svg>
+        <span>Pop Solo</span>
+      </button>
+      <button class="tab-btn" data-tab="slide" id="tab-slide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 8 6 4-6 4Z"/></svg>
+        <span>Slideshow Reel</span>
+      </button>
+      <button class="tab-btn" data-tab="ba" id="tab-ba">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12H3"/><path d="m9 6-6 6 6 6"/><path d="m15 18 6-6-6-6"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
+        <span>Before & After</span>
+      </button>
+      <button class="tab-btn" data-tab="cam" id="tab-cam">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>Live Mirror</span>
+      </button>
+    </nav>
+
+    <!-- Header Actions (Sound & Presets) -->
+    <div class="header-actions">
+      <!-- Sound Master Toggle -->
+      <div class="sound-widget" id="sound-widget">
+        <button class="sound-toggle-btn" id="sound-toggle" title="Toggle ASMR Pop Sounds">
+          <svg class="icon-sound-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg class="icon-sound-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <span class="sound-label">ASMR Sound</span>
+        </button>
+        <div class="sound-dropdown">
+          <label>Sound Style
+            <select id="sound-style">
+              <option value="bubble" selected>🫧 Bubble Pop</option>
+              <option value="retro">🕹️ 8-Bit Blip</option>
+              <option value="woodblock">🎋 Bamboo Woodblock</option>
+              <option value="water">💧 Water Droplet</option>
+              <option value="click">⌨️ Mechanical Click</option>
+            </select>
+          </label>
+          <label>Volume <output id="vol-val">60%</output>
+            <input type="range" id="sound-vol" min="0" max="1" step="0.05" value="0.6">
+          </label>
+        </div>
+      </div>
+
+      <a href="#quick-guide" class="btn-ghost icon-only" title="Quick Guide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="app-layout">
+    <!-- View 1 & 2: Pop Solo & Slideshow -->
+    <section class="studio-view" id="v-pop" data-mode="pop">
+      
+      <!-- Stage Preview Area -->
+      <div class="stage-column">
+        <!-- Aspect Ratio Bar -->
+        <div class="aspect-bar" role="group" aria-label="Aspect Ratio">
+          <span class="bar-title">Format:</span>
+          <button class="aspect-chip" data-ratio="9:16" title="TikTok / Reels / Shorts (9:16)">
+            <span class="ratio-icon ratio-9-16"></span> 9:16 Story
+          </button>
+          <button class="aspect-chip active" data-ratio="1:1" title="Instagram / PFP Square (1:1)">
+            <span class="ratio-icon ratio-1-1"></span> 1:1 Square
+          </button>
+          <button class="aspect-chip" data-ratio="4:5" title="Instagram Portrait (4:5)">
+            <span class="ratio-icon ratio-4-5"></span> 4:5 Feed
+          </button>
+          <button class="aspect-chip" data-ratio="16:9" title="YouTube / Landscape (16:9)">
+            <span class="ratio-icon ratio-16-9"></span> 16:9 Wide
+          </button>
+        </div>
+
+        <!-- Canvas Wrapper -->
+        <div class="stage-frame ratio-1-1" id="stage-frame">
+          <canvas id="stage" width="720" height="720" aria-label="Pixel Reveal animated canvas preview"></canvas>
+          
+          <!-- Ripple Epicenter Ping Marker -->
+          <div class="ripple-ping" id="ripple-ping"></div>
+
+          <!-- Drag and Drop Overlay -->
+          <div id="drop" class="drop-overlay" hidden>
+            <div class="drop-card">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <p>Drop your photo here</p>
+              <span>Supports JPG, PNG, WEBP, GIF</span>
+            </div>
+          </div>
+
+          <!-- Floating Canvas HUD Badge -->
+          <div class="stage-hud">
+            <span class="hud-pill" id="hud-particles">18,400 dots</span>
+            <span class="hud-pill" id="hud-fps">60 FPS</span>
+            <span class="hud-pill audio-pill" id="hud-audio">🫧 Audio ON</span>
+          </div>
+
+          <!-- Replay Floating Button -->
+          <button class="floating-replay" id="quick-replay" title="Replay Animation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          </button>
+        </div>
+
+        <!-- Timeline Progress Bar -->
+        <div class="playback-bar">
+          <button class="play-pause-btn" id="play-pause" title="Play / Pause">
+            <svg class="icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </button>
+          <div class="progress-track" id="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="time-label" id="time-display">0.0s / 8.0s</span>
+        </div>
+
+        <!-- Slideshow Thumbnail Tray (Slideshow Mode Only) -->
+        <div class="slideshow-tray" id="slideshow-tray" hidden>
+          <div class="tray-header">
+            <span class="tray-count" id="count">0 photos in sequence</span>
+            <div class="tray-actions">
+              <label class="btn-pill" for="files">+ Add More</label>
+              <button class="btn-pill danger" id="clear" type="button">Clear</button>
+            </div>
+          </div>
+          <div class="thumbnail-strip" id="thumb-strip"></div>
+        </div>
+      </div>
+
+      <!-- Controls Panel Column -->
+      <div class="controls-column">
+        
+        <!-- Header & Upload Row -->
+        <div class="panel-section header-section">
+          <div class="title-wrap">
+            <h1 id="mode-heading">Your photo, one pop at a time.</h1>
+            <p class="lede" id="mode-sub">Upload any image. Tiny animated dots burst and bounce into place with tactile ASMR pops.</p>
+          </div>
+
+          <!-- File Pickers -->
+          <div class="upload-actions">
+            <div class="only-pop">
+              <label class="btn-action primary" for="file">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Choose Photo
+              </label>
+              <input id="file" type="file" accept="image/*" hidden>
+              <button class="btn-action secondary" id="demo" type="button">Use Sample</button>
+            </div>
+
+            <div class="only-slide">
+              <label class="btn-action primary" for="files">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Upload Reel Photos
+              </label>
+              <input id="files" type="file" accept="image/*" multiple hidden>
+              <button class="btn-action secondary" id="slide-demo" type="button">Demo Reel</button>
+            </div>
+          </div>
+
+          <div class="sample-tray">
+            <span class="sample-label">Sample Gallery:</span>
+            <button class="sample-btn" data-sample="sample1.jpg" data-ratio="1:1" type="button">🌸 Portrait</button>
+            <button class="sample-btn" data-sample="sample3.jpg" data-ratio="1:1" type="button">⛩️ Pagoda</button>
+            <button class="sample-btn" data-sample="sample2.jpg" data-ratio="9:16" type="button">🏙️ Tokyo (9:16)</button>
+            <button class="sample-btn" data-sample="sample4.jpg" data-ratio="16:9" type="button">🏎️ Supercar (16:9)</button>
+            <button class="sample-btn" data-sample="demo" data-ratio="1:1" type="button">🌅 Retro Sun</button>
+          </div>
+        </div>
+
+        <!-- 1-Click Aesthetic Presets -->
+        <div class="panel-section">
+          <span class="section-label">Aesthetic Color Filters</span>
+          <div class="preset-chips">
+            <button class="preset-chip active" data-preset="original">✨ Original</button>
+            <button class="preset-chip" data-preset="cyberpunk">⚡ Cyberpunk Neon</button>
+            <button class="preset-chip" data-preset="gameboy">🕹️ 1989 GameBoy</button>
+            <button class="preset-chip" data-preset="lofi">🌅 Lofi Sunset</button>
+            <button class="preset-chip" data-preset="noir">🖤 Cinema Noir</button>
+            <button class="preset-chip" data-preset="vaporwave">🍬 Vaporwave</button>
+          </div>
+        </div>
+
+        <!-- Pattern & Shape Selectors -->
+        <div class="panel-section">
+          <span class="section-label">Reveal Style & Geometry</span>
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="pattern">Reveal Motion</label>
+              <select id="pattern">
+                <option value="scatter" selected>💥 Scatter (Organic random)</option>
+                <option value="ripple">🔘 Ripple (Click anywhere!)</option>
+                <option value="sweep">🌊 Sweep (Left to right)</option>
+                <option value="sweep-tb">🌧️ Cascade (Top to bottom)</option>
+                <option value="spiral">🌀 Spiral Vortex</option>
+                <option value="luminance">🌓 Shadows first (Luminance)</option>
+                <option value="edges">⚡ Outline sketch first (Edges)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="shape">Dot Shape</label>
+              <select id="shape">
+                <option value="circle" selected>⚪ Bubble Circle</option>
+                <option value="square">⬛ Retro Square</option>
+                <option value="diamond">🔷 Mosaic Diamond</option>
+                <option value="hexagon">⬡ Sci-Fi Hexagon</option>
+                <option value="star">✨ Sparkle Star</option>
+                <option value="cross">➕ Plus Crosshair</option>
+                <option value="heart">❤️ Heart</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2 mt-2">
+            <div class="form-group">
+              <label for="fit-mode">Frame Framing</label>
+              <select id="fit-mode">
+                <option value="blur" selected>🪞 Blurred Mirror Backdrop</option>
+                <option value="cover">🔍 Smart Crop & Fill</option>
+                <option value="solid">🎨 Solid Matte</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="bg">Backdrop Color</label>
+              <div class="color-picker-wrap">
+                <input id="bg" type="color" value="#1a0f30">
+                <span class="color-hex" id="bg-hex">#1a0f30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timing & Size Sliders -->
+        <div class="panel-section">
+          <span class="section-label">Fine Tuning</span>
+          
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="cell">Dot Density (Size)</label>
+              <output class="slider-val" id="cellv">5 px</output>
+            </div>
+            <input id="cell" type="range" min="3" max="20" value="5">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="dur">Total Video Length</label>
+              <output class="slider-val" id="durv">8 s</output>
+            </div>
+            <input id="dur" type="range" min="2" max="30" value="8">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="pop">Dot Pop Bounce Duration</label>
+              <output class="slider-val" id="popv">0.6 s</output>
+            </div>
+            <input id="pop" type="range" min="0.1" max="2" step="0.05" value="0.6">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="elastic">Bounce Springiness (Elasticity)</label>
+              <output class="slider-val" id="elasticv">Medium</output>
+            </div>
+            <input id="elastic" type="range" min="1" max="3" step="0.1" value="1.7">
+          </div>
+        </div>
+
+        <!-- Audio Track & Beat-Sync Engine -->
+        <div class="panel-section">
+          <div class="section-title-badge">
+            <span class="section-label">Audio & Beat-Sync Engine</span>
+            <span class="badge-feature">AI REACTIVE</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="soundtrack-mode">Soundtrack Mode</label>
+              <select id="soundtrack-mode">
+                <option value="asmr" selected>🫧 ASMR Popping Synthesis</option>
+                <option value="synthwave">🎧 120 BPM Synthwave Beats</option>
+                <option value="lofi">☕ Chill Lo-Fi Drum Beat</option>
+                <option value="custom">📁 Custom Music Track...</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="custom-audio-wrap" style="display: none;">
+              <label for="music-file">Upload Song (MP3 / WAV)</label>
+              <input id="music-file" type="file" accept="audio/*">
+            </div>
+          </div>
+
+          <div class="toggle-card mt-2">
+            <label class="toggle-switch">
+              <input type="checkbox" id="beat-sync" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <div class="toggle-info">
+              <strong>⚡ Beat-Sync Physics</strong>
+              <span>Particles dynamically pulse, expand, and pop to the bass drops</span>
+            </div>
+          </div>
+
+          <!-- VU Energy Meter -->
+          <div class="vu-meter-bar" id="vu-meter" title="Bass Energy Frequency">
+            <div class="vu-meter-fill" id="vu-fill"></div>
+          </div>
+        </div>
+
+        <!-- Retro FX & CRT Glitch Engine -->
+        <div class="panel-section">
+          <div class="section-title-badge">
+            <span class="section-label">Retro FX & Glitch Engine</span>
+            <span class="badge-feature">POST FX</span>
+          </div>
+
+          <div class="fx-toggles-grid">
+            <label class="fx-chip" id="fx-crt-label">
+              <input type="checkbox" id="fx-crt">
+              <span class="fx-chip-content">
+                <span class="fx-icon">📺</span>
+                <span class="fx-title">CRT Scanlines</span>
+              </span>
+            </label>
+
+            <label class="fx-chip" id="fx-chroma-label">
+              <input type="checkbox" id="fx-chroma">
+              <span class="fx-chip-content">
+                <span class="fx-icon">🌈</span>
+                <span class="fx-title">RGB Split (Chroma)</span>
+              </span>
+            </label>
+
+            <label class="fx-chip" id="fx-vhs-label">
+              <input type="checkbox" id="fx-vhs">
+              <span class="fx-chip-content">
+                <span class="fx-icon">📼</span>
+                <span class="fx-title">VHS Glitch</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Export & Share Action Station -->
+        <div class="panel-section export-section">
+          <div class="export-buttons">
+            <button class="btn-export primary-export" id="rec" type="button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              <span>Download 60 FPS Video (with Audio)</span>
+            </button>
+            <button class="btn-export secondary-export" id="export-gif" type="button" title="Export as looping animated GIF or sticker for Discord / WhatsApp">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>Export GIF / Sticker</span>
+            </button>
+            <button class="btn-export secondary-export" id="png" type="button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Save HD Still PNG</span>
+            </button>
+            <button class="btn-export secondary-export" id="share-btn" type="button" title="Share via native share sheet">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span>Share</span>
+            </button>
+          </div>
+          
+          <div class="status-tip" id="msg">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="msg-text">Tip: With Ripple reveal, click anywhere on the canvas to set the wave center!</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- View 3: Before & After Studio Mode -->
+    <section class="studio-view" id="v-ba" hidden>
+      <div class="stage-column">
+        <div class="stage-frame ratio-1-1" id="ba-stage-frame">
+          <canvas id="ba" width="720" height="720" aria-label="Before and after interactive pixel wipe preview"></canvas>
+          <div class="ba-slider-handle" id="ba-handle"></div>
+        </div>
+      </div>
+
+      <div class="controls-column">
+        <div class="panel-section header-section">
+          <h1>Compare: Original vs Pixel Pop</h1>
+          <p class="lede">Drag across the canvas or scrub the slider below to see how the procedural mosaic quantizes your photo.</p>
+          
+          <div class="upload-actions">
+            <label class="btn-action primary" for="bafile">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Choose Photo
+            </label>
+            <input id="bafile" type="file" accept="image/*" hidden>
+            <button class="btn-action secondary" id="bademo" type="button">Sample Art</button>
+          </div>
+
+          <div class="sample-tray mt-2">
+            <span class="sample-label">Quick Samples:</span>
+            <button class="ba-sample-btn sample-btn" data-sample="sample1.jpg" type="button">🌸 Portrait</button>
+            <button class="ba-sample-btn sample-btn" data-sample="sample3.jpg" type="button">⛩️ Pagoda</button>
+            <button class="ba-sample-btn sample-btn" data-sample="sample4.jpg" type="button">🏎️ Supercar</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <span class="section-label">Wipe Controls</span>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="split">Divider Position</label>
+              <output class="slider-val" id="splitv">50%</output>
+            </div>
+            <input id="split" type="range" min="0" max="100" value="50">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="bacell">Pixel Block Size</label>
+              <output class="slider-val" id="bacv">16 px</output>
+            </div>
+            <input id="bacell" type="range" min="4" max="64" value="16">
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="ba-style">Pixel Rendering</label>
+            </div>
+            <select id="ba-style">
+              <option value="pixel">Classic Mosaic Blocks</option>
+              <option value="dots">Circular Dot Matrix</option>
+            </select>
+          </div>
+
+          <div class="toggle-row mt-2">
+            <button class="btn-action secondary w-full" id="ba-auto" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Auto Sweep Animation</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section export-section">
+          <button class="btn-export primary-export" id="bapng" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download Comparison Picture</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 4: Live Webcam Mirror Mode -->
+    <section class="studio-view" id="v-cam" hidden>
+      <div class="stage-column">
+        <div class="stage-frame ratio-1-1" id="cam-stage-frame">
+          <canvas id="cam-stage" width="720" height="720" aria-label="Live webcam pixel mirror preview"></canvas>
+          <div class="stage-hud">
+            <span class="hud-pill" id="cam-hud-fps">60 FPS</span>
+            <span class="hud-pill audio-pill">🔴 LIVE WEBCAM</span>
+          </div>
+        </div>
+
+        <div class="cam-actions-bar">
+          <button class="btn-action primary" id="cam-snap" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Snap Still Art</span>
+          </button>
+          <button class="btn-action secondary" id="cam-rec" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="#ff3366"/></svg>
+            <span id="cam-rec-label">Record 5s Reel</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="controls-column">
+        <div class="panel-section header-section">
+          <h1>Live Pixel Mirror</h1>
+          <p class="lede">Stand in front of your camera. Watch yourself dissolve and quantize into live interactive popping dots in real-time!</p>
+          
+          <div class="status-tip" id="cam-status">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span id="cam-msg">Click "Start Camera" to initialize your live mirror.</span>
+          </div>
+          <div class="mt-2">
+            <button class="btn-action primary w-full" id="cam-start-btn" type="button">
+              <span>🎥 Start Camera Mirror</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <span class="section-label">Mirror Dot Styling</span>
+          <div class="slider-row">
+            <div class="slider-header">
+              <label for="cam-cell">Pixel Dot Size</label>
+              <output class="slider-val" id="cam-cellv">8 px</output>
+            </div>
+            <input id="cam-cell" type="range" min="4" max="22" value="8">
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="cam-filter">Live Aesthetic Filter</label>
+            <select id="cam-filter">
+              <option value="original" selected>✨ Original Vibrant</option>
+              <option value="cyberpunk">⚡ Tokyo Cyberpunk Neon</option>
+              <option value="gameboy">🕹️ 1989 GameBoy Green</option>
+              <option value="lofi">🌅 Lofi Sunset Warmth</option>
+              <option value="noir">🖤 Cinema Noir B&W</option>
+              <option value="matrix">💻 Matrix Code Green</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Guide / Feature Documentation -->
+    <section id="quick-guide" class="features-summary">
+      <div class="summary-header">
+        <h2>What's New in Studio 2026</h2>
+        <p>Built for modern short-form creators, digital artists, and aesthetic web reveals.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feat-icon">📱</div>
+          <h3>Modern Formats</h3>
+          <p>Switch freely between <strong>9:16 vertical</strong> for TikTok & Reels, <strong>1:1 square</strong> for Instagram posts, and <strong>16:9</strong> for widescreen videos.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon">🫧</div>
+          <h3>Synthesized ASMR Audio</h3>
+          <p>Zero external sound files. Real-time procedural audio synthesis generates bubble pops, 8-bit blips, and bamboo chimes synchronized into your video export.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon">⚡</div>
+          <h3>Contour & Depth Physics</h3>
+          <p>Go beyond random pops: reveal outlines first with Sobel edge detection, or let shadows pop prior to highlights using luminance maps.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon">🎨</div>
+          <h3>1-Click Aesthetic Filters</h3>
+          <p>Instantly transform ordinary photos with Tokyo Cyberpunk neon, 1989 GameBoy 4-color green, or vintage Lofi Sunset palettes.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon">🔒</div>
+          <h3>100% Private & Serverless</h3>
+          <p>Your photos never leave your device. All pixel calculations, sound synthesis, and video encoding happen completely client-side in your browser.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon">🎞️</div>
+          <h3>Multi-Slide Story Reels</h3>
+          <p>Queue up multiple images to produce a continuous reel video with seamless transitions from one photo to the next.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- App Footer with Creator Attribution -->
+  <footer class="app-footer">
+    <div class="creator-showcase">
+      <div class="creator-badge" id="creator-badge">
+        <div class="creator-avatar" aria-hidden="true">TP</div>
+        <div class="creator-meta">
+          <span class="creator-kicker">✦ STUDIO DESIGN ✦</span>
+          <p class="creator-statement">Created by <strong class="creator-name">Teja Priyan</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-content">
+      <p>Pixel Studio 2026 • Crafted with HTML5 Canvas, Web Audio API & MediaStream</p>
+      <p class="sub">100% private, client-side video studio. Runs locally on Chrome, Safari, Edge & Firefox.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
