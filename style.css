@@ -1682,3 +1682,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     flex: 1 1 100%;
   }
 }
+
+/* Information pages stay outside the editor controls. */
+.app-footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 22px;padding:16px}.app-footer nav a{color:inherit;text-underline-offset:4px}.app-footer nav a:focus-visible{outline:2px solid currentColor;outline-offset:5px}
