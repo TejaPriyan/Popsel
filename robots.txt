@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://popsel.vercel.app/sitemap.xml
